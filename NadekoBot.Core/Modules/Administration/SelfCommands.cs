@@ -431,69 +431,38 @@ namespace NadekoBot.Modules.Administration
             }
 
             [NadekoCommand, Usage, Description, Aliases]
+			[RequireContext(ContextType.Guild)]
             [OwnerOnly]
             public async Task Send(string where, [Remainder] string msg = null)
             {
-                if (string.IsNullOrWhiteSpace(msg))
-                    return;
-
-                var ids = where.Split('|');
-                if (ids.Length != 2)
-                    return;
-                var sid = ulong.Parse(ids[0]);
-                var server = _client.Guilds.FirstOrDefault(s => s.Id == sid);
+                var server = _client.Guilds.FirstOrDefault(s => s.Id == Context.Guild.Id);
 
                 if (server == null)
                     return;
 
-                var rep = new ReplacementBuilder()
-                    .WithDefault(Context)
-                    .Build();
-
-                if (ids[1].ToUpperInvariant().StartsWith("C:"))
-                {
-                    var cid = ulong.Parse(ids[1].Substring(2));
-                    var ch = server.TextChannels.FirstOrDefault(c => c.Id == cid);
-                    if (ch == null)
+                if (where.Contains('#'))
+				{
+					var cid = ulong.Parse(where.Substring(2, where.Length - 3));
+					var ch = server.TextChannels.FirstOrDefault(c => c.Id == cid);
+					if (ch == null)
                     {
                         return;
                     }
-
-                    if (CREmbed.TryParse(msg, out var crembed))
-                    {
-                        rep.Replace(crembed);
-                        await ch.EmbedAsync(crembed.ToEmbed(), crembed.PlainText?.SanitizeMentions() ?? "")
-                            .ConfigureAwait(false);
-                        await ReplyConfirmLocalized("message_sent").ConfigureAwait(false);
-                        return;
-                    }
-                    await ch.SendMessageAsync(rep.Replace(msg).SanitizeMentions());
-                }
-                else if (ids[1].ToUpperInvariant().StartsWith("U:"))
-                {
-                    var uid = ulong.Parse(ids[1].Substring(2));
-                    var user = server.Users.FirstOrDefault(u => u.Id == uid);
-                    if (user == null)
+                    await ch.SendMessageAsync(msg).ConfigureAwait(false);
+				}
+				else if (where.Contains('@'))
+				{
+					var uid = ulong.Parse(where.Substring(3, where.Length - 4));
+					var user = server.Users.FirstOrDefault(u => u.Id == uid);
+					if (user == null)
                     {
                         return;
                     }
+                    await user.SendMessageAsync(msg).ConfigureAwait(false);
+				}
+				else
+					return;
 
-                    if (CREmbed.TryParse(msg, out var crembed))
-                    {
-                        rep.Replace(crembed);
-                        await (await user.GetOrCreateDMChannelAsync()).EmbedAsync(crembed.ToEmbed(), crembed.PlainText?.SanitizeMentions() ?? "")
-                            .ConfigureAwait(false);
-                        await ReplyConfirmLocalized("message_sent").ConfigureAwait(false);
-                        return;
-                    }
-
-                    await (await user.GetOrCreateDMChannelAsync()).SendMessageAsync(rep.Replace(msg).SanitizeMentions());
-                }
-                else
-                {
-                    await ReplyErrorLocalized("invalid_format").ConfigureAwait(false);
-                    return;
-                }
                 await ReplyConfirmLocalized("message_sent").ConfigureAwait(false);
             }
 
