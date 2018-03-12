@@ -149,6 +149,31 @@ namespace NadekoBot.Modules.Administration
 
         [NadekoCommand, Usage, Description, Aliases]
         [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.ManageChannels)]
+        [RequireBotPermission(GuildPermission.ManageChannels)]
+        public async Task voiceKick(params IGuildUser[] users)
+        {
+            var ch = await Context.Guild.CreateVoiceChannelAsync("VoiceKicked").ConfigureAwait(false);
+			if (!users.Any())
+                return;
+            foreach (var u in users)
+            {
+                try
+                {  
+					await u.ModifyAsync(usr => usr.ChannelId = ch.Id).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+			await ch.DeleteAsync().ConfigureAwait(false);
+            await ch.SendConfirmAsync("User removed from voice channel.").ConfigureAwait(false);
+            
+        }
+
+        [NadekoCommand, Usage, Description, Aliases]
+        [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.DeafenMembers)]
         [RequireBotPermission(GuildPermission.DeafenMembers)]
         public async Task Deafen(params IGuildUser[] users)
