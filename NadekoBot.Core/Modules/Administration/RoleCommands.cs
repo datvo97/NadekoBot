@@ -331,6 +331,42 @@ namespace NadekoBot.Modules.Administration
                     await Context.Channel.SendMessageAsync(role.Mention);
                 }
             }
+
+            [NadekoCommand, Usage, Description, Aliases]
+            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(GuildPermission.BanMembers)]
+            [RequireBotPermission(GuildPermission.BanMembers)]
+            public async Task purgeRole(IRole role, int amount = 0)
+            {
+				var users = (await Context.Guild.GetUsersAsync()).Where(u => u.GetRoles().Contains(role));
+				int count = 1;
+				foreach (var user in users)
+				{
+					if (count >= amount)
+						return;
+					if(user.RoleIds.Count <= 2)
+					{
+						await user.KickAsync("Part of inactive purge | User #" + count).ConfigureAwait(false);
+						await Context.Channel.SendMessageAsync(user.Mention + " doesn't feel so good... User #" + count + " has been removed.").ConfigureAwait(false);
+						count++;
+					}
+				}
+            }
+			
+			[NadekoCommand, Usage, Description, Aliases]
+            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(GuildPermission.ManageRoles)]
+            [RequireBotPermission(GuildPermission.ManageRoles)]
+            public async Task RemoveEmotesFromRole([Remainder]IRole role)
+            {
+				var users = (await Context.Guild.GetUsersAsync()).Where(u => u.GetRoles().Contains(role));
+				var emoteRole = Context.Guild.Roles.FirstOrDefault(emoterole => emoterole.Id == 391885875056869379);
+				foreach (var user in users)
+				{
+					await user.RemoveRoleAsync(emoteRole).ConfigureAwait(false);
+				}
+				await Context.Channel.SendConfirmAsync("Removed Emotes Only role from those users.").ConfigureAwait(false);
+            }
         }
     }
 }
