@@ -149,6 +149,29 @@ namespace NadekoBot.Modules.Administration
 
         [NadekoCommand, Usage, Description, Aliases]
         [RequireContext(ContextType.Guild)]
+        [RequireUserPermission(GuildPermission.BanMembers)]
+        [RequireBotPermission(GuildPermission.BanMembers)]
+        public async Task KickInactive(params IGuildUser[] users)
+        {
+            var usrs = (await Context.Guild.GetUsersAsync()).ToArray();
+			var roles = guild.Roles.Except(new[] { guild.EveryoneRole }).OrderBy(r => -r.Position).ToArray();
+			var noRoleUsers;
+            foreach (var usr in usrs)
+            {
+                foreach (var ro in roles)
+				{
+					if (usr.RoleIds.Contains(ro.Id))
+					{
+						await Context.Channel.SendConfirmAsync("Inactives kicked").ConfigureAwait(false);
+					}
+				}
+            }
+            await Context.Channel.SendConfirmAsync("Inactives kicked").ConfigureAwait(false);
+
+        }
+
+        [NadekoCommand, Usage, Description, Aliases]
+        [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         [RequireBotPermission(GuildPermission.ManageChannels)]
         public async Task voiceKick(params IGuildUser[] users)
